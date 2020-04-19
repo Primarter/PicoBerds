@@ -8,20 +8,11 @@ width = 128
 height = 128
 
 function _init()
- invi = false
+ p1 = {time=0, x=16,  y=56, anim=1, flip=false, disp=true, zone_t=0}
+ p2 = {time=0, x=112, y=56, anim=4, flip=false}
  pause = false
- gt = 0
- t_char = 0
- t_en = 0
- st = 4
- x_char = 16
- y_char = 56
- x_en = 112
- y_en = 56
- char_anim = 1
- en_anim = 4
- char_flp = false
- en_flp = false
+ general_time = 0
+ game_st = 4
 end
 
 function _paused()
@@ -29,69 +20,70 @@ function _paused()
 end
 
 function _update()
- gt += 1
+ general_time += 1
  pause = false
 
- -- player 2 move
+ -- player 1 move
  if (btn(0, 1)) then
-  x_char -= 3
-  char_flp = true
+  p1.x -= 3
+  p1.flip = true
  end
  if (btn(1, 1)) then
-  x_char += 3
-  char_flp = false
+  p1.x += 3
+  p1.flip = false
  end
  if (btn(3, 1)) then
-  y_char += 3
+  p1.y += 3
  end
  if (btn(2, 1)) then
-  y_char -= 3
+  p1.y -= 3
  end
 
- -- player 1 move
- if (btn(0, 0)) then
-  x_en -= 3
-  en_flp = false
+ -- player 2 move
+ if (btn(0, 0) and not point_col(p2.x - 2, p2.y) and not point_col(p2.x - 2, p2.y + 7)) then
+  p2.x -= 3
+  p2.flip = false
  end
- if (btn(1, 0)) then
-  x_en += 3
-  en_flp = true
+ if (btn(1, 0) and not point_col(p2.x + 10, p2.y) and not point_col(p2.x + 10, p2.y + 7)) then
+  p2.x += 3
+  p2.flip = true
  end
- if (btn(3, 0)) then
-  y_en += 3
+ if (btn(3, 0) and not point_col(p2.x, p2.y + 10) and not point_col(p2.x + 7, p2.y + 10)) then
+  p2.y += 3
  end
- if (btn(2, 0)) then
-  y_en -= 3
+ if (btn(2, 0) and not point_col(p2.x, p2.y - 1) and not point_col(p2.x + 7, p2.y - 2)) then
+  p2.y -= 3
  end
 
  -- players animations
- t_char += 1
- t_en += 1
- if (t_en % 7 == 0) then
-  en_anim = (en_anim == 4) and 5 or 4
-  t_en = 0
+ p1.time += 1
+ p2.time += 1
+ if (p2.time % 7 == 0) then
+  p2.anim = (p2.anim == 4) and 5 or 4
+  p2.time = 0
  end
- if (t_char % 5 == 0) then
-  char_anim = (char_anim == 1) and 2 or 1
-  t_char = 0
+ if (p1.time % 5 == 0) then
+  p1.anim = (p1.anim == 1) and 2 or 1
+  p1.time = 0
  end
 
  -- collisions
  if (collide()) then
-  st = 1
+  game_st = 1
  end
- x_char, y_char = side_collision(x_char, y_char)
- x_en, y_en = side_collision(x_en, y_en)
- invi = check_invi(x_char, y_char)
+ p1.x, p1.y = side_collision(p1.x, p1.y)
+ p2.x, p2.y = side_collision(p2.x, p2.y)
+ p1.disp = check_disp(p1.x, p1.y)
+ check_zone()
 
  -- start
- if (st == 4 and btn(4, 1)) then
-  st = 3
+ if (game_st == 4 and btn(4, 1)) then
+  game_st = 3
  end
 
  -- restart
- if (st == 1 and btn(4, 1)) then
-  st = 2
+ if (game_st == 1 and btn(4, 1)) then
+  game_st = 2
  end
 end
 
@@ -99,41 +91,41 @@ function _draw()
  if (pause == false) then
   cls()
 
-  if (st == 4) then
+  if (game_st == 4) then
    my_menu()
    return
   end
-  if (st == 3) then
+  if (game_st == 3) then
    dr_restart()
   else
    map(0, 0, 0, 0, 16, 16, 0)
   end
-  if (st == 0) then
-   spr(en_anim, x_en, y_en, 1, 1, en_flp, false)
-   if (invi == false) then
-    spr(char_anim, x_char, y_char, 1, 1, char_flp, false)
+  if (game_st == 0) then
+   spr(p2.anim, p2.x, p2.y, 1, 1, p2.flip, false)
+   if (p1.disp == true) then
+    spr(p1.anim, p1.x, p1.y, 1, 1, p1.flip, false)
    end
-  elseif (st == 1) then
+  elseif (game_st == 1) then
    print('player 1 died', 36, 48, 8)
    print('press tab to restart', 24, 64, 8)
   else
-   st = 3
+   game_st = 3
    _init()
   end
  end
 end
 -->8
 function collide()
- if (y_en >= y_char and y_en <= y_char + 8 and x_en >= x_char and x_en <= x_char + 8) then
+ if (p2.y >= p1.y and p2.y <= p1.y + 8 and p2.x >= p1.x and p2.x <= p1.x + 8) then
    return true
  end
- if (y_en + 8 >= y_char and y_en + 8 <= y_char + 8 and x_en >= x_char and x_en <= x_char + 8) then
+ if (p2.y + 8 >= p1.y and p2.y + 8 <= p1.y + 8 and p2.x >= p1.x and p2.x <= p1.x + 8) then
   return true
  end
- if (y_en >= y_char and y_en <= y_char + 8 and x_en + 8 >= x_char and x_en + 8 <= x_char + 8) then
+ if (p2.y >= p1.y and p2.y <= p1.y + 8 and p2.x + 8 >= p1.x and p2.x + 8 <= p1.x + 8) then
    return true
  end
- if (y_en + 8 >= y_char and y_en + 8 <= y_char + 8 and x_en + 8 >= x_char and x_en + 8 <= x_char + 8) then
+ if (p2.y + 8 >= p1.y and p2.y + 8 <= p1.y + 8 and p2.x + 8 >= p1.x and p2.x + 8 <= p1.x + 8) then
    return true
  end
  return false
@@ -160,38 +152,34 @@ function side_collision(sp_x, sp_y)
  return sp_x, sp_y, test
 end
 
-function check_invi(x, y)
- x -= 1
- y -= 1
+function check_disp(x, y)
  if (fget(mget((x + 0) / 8, (y + 0) / 8), 2) == true) and
     (fget(mget((x + 7) / 8, (y + 7) / 8), 2) == true) and
     (fget(mget((x + 7) / 8, (y + 0) / 8), 2) == true) and
     (fget(mget((x + 0) / 8, (y + 7) / 8), 2) == true) then
+  return false
+ end
+ return true
+end
+
+function check_zone()
+ if (p1.disp == false) then
+  p1.zone_t += 1
+ else
+  p1.zone_t = 0
+ end
+ if (p1.zone_t >= 75) then
+  game_st = 1
+ end
+end
+
+function point_col(x, y)
+ if (fget(mget(x / 8, y / 8), 2) == true) then
   return true
  end
  return false
 end
 
-function check_zone(x, y)
-end
-
-function sleep(n) 
- for i=1, n*30 do
-  flip()
- end
-end
--->8
-function dr_restart()
- cls()
- map(0, 0, 0, 0, 16, 16, 0)
- print('ready?', 52, 56, 8)
- sleep(1.5)
- cls()
- map(0, 0, 0, 0, 16, 16, 0)
- print('chase!', 52, 56, 8)
- sleep(0.75)
- st = 0
-end
 -->8
 function my_menu()
  cls()
@@ -200,7 +188,7 @@ function my_menu()
   for j0=0,7 do
   j = 7-j0
   col = 7+j
-  t1 = gt + i*4 - j*2
+  t1 = general_time + i*4 - j*2
   x = cos(t0)*5
   y = 38 + j + cos(t1/50)*5
   pal(7,col)
@@ -215,6 +203,24 @@ function my_menu()
 
   spr(0, 48, 90)
   spr(3, 72, 90)
+end
+
+function dr_restart()
+ cls()
+ map(0, 0, 0, 0, 16, 16, 0)
+ print('ready?', 52, 56, 8)
+ sleep(1.5)
+ cls()
+ map(0, 0, 0, 0, 16, 16, 0)
+ print('chase!', 52, 56, 8)
+ sleep(0.75)
+ game_st = 0
+end
+
+function sleep(n) 
+ for i=1, n*30 do
+  flip()
+ end
 end
 __gfx__
 000000000000000000000000000000000000000000000000ccccccccccccccccccccc77ccccccccceeeeeeeeeeeeeeeee22222222222222e2222222222222222
